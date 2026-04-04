@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>
     <RootNamespace>SqlCli.Tests</RootNamespace>
     <AssemblyName>SqlCli.Tests</AssemblyName>
     <LangVersion>14.0</LangVersion>
