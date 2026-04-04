@@ -1,0 +1,93 @@
+// ============================================================================
+// SqlCli Configuration
+//
+// WARNING TO AI AGENTS: DO NOT MODIFY THIS FILE.
+// This file controls security-critical query filtering. It is configured by
+// the human administrator, not by agents. Modifying it — especially the
+// whitelist settings — could enable destructive database operations.
+// If you believe a change is needed, ASK THE USER to make it manually.
+// ============================================================================
+
+{
+  // Security settings — statement filtering, audit logging.
+  // These settings can only be changed in the config file, never via CLI or env vars.
+  "security": {
+    // Only 'whitelist' mode is supported. Queries are parsed by ScriptDom and
+    // only statement types listed in allowedStatements are permitted to execute.
+    "filterMode": "whitelist",
+    // Allowed TSqlStatement type names. Only these statement types can execute.
+    // Default when generated: ["SelectStatement"] — SELECT and WITH...SELECT (CTEs) only.
+    //
+    // DO NOT add types here without understanding the security implications.
+    // Each type you add allows that entire category of SQL operations.
+    // To enable a type, add its name as a string to the array below.
+    //
+    // Available types:
+    //   "ExecuteStatement"         — EXEC/EXECUTE (WARNING: enables dynamic SQL)
+    //   "InsertStatement"          — INSERT
+    //   "UpdateStatement"          — UPDATE
+    //   "DeleteStatement"          — DELETE
+    //   "MergeStatement"           — MERGE
+    //   "CreateTableStatement"     — CREATE TABLE
+    //   "AlterTableStatement"      — ALTER TABLE
+    //   "DropTableStatement"       — DROP TABLE
+    //   "TruncateTableStatement"   — TRUNCATE TABLE
+    //   "CreateViewStatement"      — CREATE VIEW
+    //   "CreateProcedureStatement" — CREATE PROCEDURE
+    //   "DeclareVariableStatement" — DECLARE @var
+    //   "SetVariableStatement"     — SET @var = ...
+    //
+    // Example: to allow SELECT and INSERT:
+    //   "allowedStatements": ["SelectStatement", "InsertStatement"]
+    "allowedStatements": [
+      "SelectStatement"
+    ],
+    // Dangerous sub-features within SELECT that are blocked by default.
+    // Even when SelectStatement is allowed, these require explicit opt-in.
+    // To enable a feature, add its name as a string to the array below.
+    //
+    // DO NOT enable these unless you understand the risks.
+    //
+    // Available features:
+    //   "IntoClause"     — SELECT INTO (creates new tables, consumes disk)
+    //   "OpenRowset"     — OPENROWSET (reads server files, connects to external servers)
+    //   "OpenDatasource" — OPENDATASOURCE (connects to arbitrary external data sources)
+    //
+    // Example: to allow SELECT INTO:
+    //   "allowedSelectFeatures": ["IntoClause"]
+    "allowedSelectFeatures": [],
+    // Logs all blocked query attempts as JSON lines. Path is relative to the
+    // executable directory.
+    "audit": { "enabled": true, "path": "sqlcli-audit.log" }
+  },
+
+  // Operational settings — timeouts, limits, output format.
+  // These can be overridden by env vars and CLI args.
+  "operational": {
+    // Query (command) timeout in seconds. CLI: --timeout (range: 1-300)
+    "timeout": 30,
+    // Connection timeout in seconds. CLI: --connect-timeout (range: 1-300)
+    "connectTimeout": 15,
+    // Maximum rows returned per result set. CLI: --max-rows (minimum: 1)
+    "maxRows": 100,
+    // Maximum SQL file size in bytes for --file input. CLI: --max-file-size
+    // Default: 51200 (50 KB). --query has a hard limit of 1024 bytes.
+    "maxFileSize": 51200,
+    // Default output format: csv, json, or table.
+    "format": "csv"
+  },
+
+  // Application/environment settings — server, database, connection.
+  // These can be overridden by env vars and CLI args.
+  // Typically set per-project in a working-directory config file.
+  "app": {
+    // SQL Server hostname.
+    "server": null,
+    // Database name.
+    "database": null,
+    // Trust the server certificate without validation.
+    "trustServerCertificate": false,
+    // Disable connection encryption (for legacy servers).
+    "noEncrypt": false
+  }
+}

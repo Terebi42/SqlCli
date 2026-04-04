@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SqlCli/SqlCli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SqlCli.Tests/SqlCli.Tests.csproj" />
+  </Folder>
+</Solution>
