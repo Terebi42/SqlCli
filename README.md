@@ -184,6 +184,33 @@ The statement filter is **defense-in-depth**, not a complete security boundary. 
 - `--max-rows` enforces a minimum of 1 (0 or negative values are rejected)
 - `--timeout` and `--connect-timeout` enforce a range of 1-300 seconds
 
+## Security Mode (Build-Time)
+
+SqlCli must be built with an explicit `SecurityMode` property. The build fails if this is not set, ensuring a conscious choice.
+
+### Standard Mode
+
+```bash
+dotnet build SqlCli.slnx -p:SecurityMode=Standard
+```
+
+Security whitelists are loaded from `sqlcli.config.jsonc` at runtime. This is the default for development and flexible deployments where an administrator manages the config file.
+
+### Hardened Mode
+
+```bash
+dotnet build SqlCli.slnx -p:SecurityMode=Hardened
+```
+
+Security whitelists are compiled into the binary. The config file's security section is ignored. This prevents an AI agent (or any process with file system access) from escalating its SQL permissions by modifying the config file before invoking SqlCli.
+
+Hardened mode compiles in:
+- `AllowedStatements`: `["SelectStatement"]`
+- `AllowedSelectFeatures`: `[]` (all dangerous features blocked)
+- Audit logging enabled
+
+Operational and app settings (timeouts, server, database, etc.) are still loaded from config files and CLI args in both modes.
+
 ## Limitations
 
 - **Windows only** -- uses `NegotiateAuthentication` SSPI for domain authentication, targets `net10.0-windows`
@@ -195,14 +222,17 @@ The statement filter is **defense-in-depth**, not a complete security boundary. 
 
 ## Building
 
+SecurityMode is required. Choose Standard (config-file whitelists) or Hardened (compiled-in whitelists):
+
 ```bash
-dotnet build SqlCli.slnx
+dotnet build SqlCli.slnx -p:SecurityMode=Standard
+dotnet build SqlCli.slnx -p:SecurityMode=Hardened
 ```
 
 ## Testing
 
 ```bash
-dotnet test SqlCli.slnx
+dotnet test SqlCli.slnx -p:SecurityMode=Standard
 ```
 
 ## Dependencies

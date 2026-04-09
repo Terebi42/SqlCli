@@ -30,7 +30,7 @@ jobs:
       run: dotnet restore SqlCli.slnx
 
     - name: Build
-      run: dotnet build SqlCli.slnx --no-restore --configuration Release
+      run: dotnet build SqlCli.slnx --no-restore --configuration Release -p:SecurityMode=Standard
 
     - name: Test
-      run: dotnet test SqlCli.slnx --no-build --configuration Release --verbosity normal
+      run: dotnet test SqlCli.slnx --no-build --configuration Release --verbosity normal -p:SecurityMode=Standard
