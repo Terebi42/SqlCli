@@ -1,4 +1,5 @@
 using System;
+using SqlCli.Config;
 
 namespace SqlCli
 {
@@ -22,6 +23,7 @@ namespace SqlCli
 				Designed for safe, investigative database queries.
 
 				**Binary:** `{{exePath}}`
+				**Security Mode:** {{( ConfigLoader.IsHardened ? "Hardened (security whitelist compiled into binary, config file security section ignored)" : "Standard (security whitelist loaded from config file)" )}}
 
 				### CRITICAL: Configuration is Off-Limits
 
@@ -45,7 +47,7 @@ namespace SqlCli
 				### Safety Model
 
 				- Queries are parsed using Microsoft's T-SQL parser (ScriptDom) and validated against a whitelist of allowed statement types
-				- The whitelist is defined in `sqlcli.config.jsonc` next to the executable (not overridable via CLI)
+				- The whitelist is {{( ConfigLoader.IsHardened ? "compiled into this binary and cannot be changed without rebuilding from source" : "defined in `sqlcli.config.jsonc` next to the executable (not overridable via CLI)" )}}
 				- Default whitelist: `SelectStatement` only — no INSERT, UPDATE, DELETE, DROP, EXEC, or any other statement type
 				- Blocked queries are logged to an audit file
 				- You CANNOT bypass the filter — do not attempt destructive queries

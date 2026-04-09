@@ -24,7 +24,7 @@ namespace SqlCli.Config
 		/// </summary>
 		[SecuritySetting]
 		[ConfigSection( "Security" )]
-		[ConfigComment( "Security settings — statement filtering, audit logging.\nThese settings can only be changed in the config file, never via CLI or env vars." )]
+		[ConfigComment( "Security settings — statement filtering, audit logging.\nIn Standard builds, these settings are loaded from this file.\nIn Hardened builds, these settings are compiled into the binary and this section is ignored.\nThese settings cannot be overridden via CLI arguments or environment variables." )]
 		[JsonPropertyName( "security" )]
 		public SecurityConfig Security { get; set; } = new();
 
