@@ -1,0 +1,12 @@
+<Project>
+
+  <PropertyGroup Condition="'$(SecurityMode)' == 'Hardened'">
+    <DefineConstants>$(DefineConstants);HARDENED_SECURITY</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="_ValidateSecurityMode" BeforeTargets="CoreCompile">
+    <Error Condition="'$(SecurityMode)' != 'Standard' and '$(SecurityMode)' != 'Hardened'"
+           Text="SecurityMode property is required. Use -p:SecurityMode=Standard (security whitelist loaded from config file) or -p:SecurityMode=Hardened (security whitelist compiled into binary, config file ignored). See README.md for details." />
+  </Target>
+
+</Project>
