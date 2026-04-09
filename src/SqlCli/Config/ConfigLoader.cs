@@ -38,6 +38,16 @@ namespace SqlCli.Config
 		/// </summary>
 		internal const string AppFileName = "sqlcli.app.jsonc";
 
+		/// <summary>
+		/// Indicates whether this binary was compiled in Hardened security mode.
+		/// When true, security settings are compiled into the binary and config file security section is ignored.
+		/// </summary>
+#if HARDENED_SECURITY
+		internal const bool IsHardened = true;
+#else
+		internal const bool IsHardened = false;
+#endif
+
 		private static readonly JsonSerializerOptions ReadOptions = new()
 		{
 			PropertyNameCaseInsensitive = true,
@@ -46,13 +56,64 @@ namespace SqlCli.Config
 		};
 
 		/// <summary>
-		/// Loads the immutable security configuration from the executable directory.
-		/// Checks for a dedicated security file first, then falls back to the combined config.
-		/// If neither exists, generates a default combined config with <c>["SelectStatement"]</c>.
+		/// Ensures a config file exists in the executable directory.
+		/// If neither the combined config nor the dedicated security file exists,
+		/// generates a default combined config with <c>["SelectStatement"]</c>.
+		/// This is an operational convenience and runs in both Standard and Hardened modes.
+		/// </summary>
+		/// <param name="exeDir">Directory containing the executable.</param>
+		public static void EnsureConfigExists( string exeDir )
+		{
+			var configPath = Path.Combine( exeDir, ConfigFileName );
+			if ( !File.Exists( configPath ) && !File.Exists( Path.Combine( exeDir, SecurityFileName ) ) )
+			{
+				var defaultConfig = CreateDefaultConfig();
+				var jsonc = JsoncGenerator.Generate( defaultConfig );
+				File.WriteAllText( configPath, jsonc );
+				Console.Error.WriteLine( $"Config file not found. Created default config at: {configPath}" );
+			}
+		}
+
+		/// <summary>
+		/// Loads the immutable security configuration.
+		/// In Hardened builds, returns compiled-in defaults (config file ignored).
+		/// In Standard builds, loads from the executable directory config files.
 		/// </summary>
 		/// <param name="exeDir">Directory containing the executable and config files.</param>
 		/// <returns>Immutable security configuration.</returns>
 		public static SecurityConfig LoadSecurity( string exeDir )
+		{
+#if HARDENED_SECURITY
+			return CreateHardenedSecurity();
+#else
+			return LoadSecurityFromFile( exeDir );
+#endif
+		}
+
+		/// <summary>
+		/// Returns the hardcoded security configuration for Hardened builds.
+		/// Allows only SelectStatement with no dangerous select features.
+		/// </summary>
+		/// <returns>Hardcoded immutable security configuration.</returns>
+		internal static SecurityConfig CreateHardenedSecurity()
+		{
+			return new SecurityConfig
+			{
+				FilterMode = "whitelist",
+				AllowedStatements = new List<string> { "SelectStatement" },
+				AllowedSelectFeatures = new(),
+				Audit = new AuditConfig()
+			};
+		}
+
+		/// <summary>
+		/// Loads security configuration from config files in the executable directory.
+		/// Checks for a dedicated security file first, then falls back to the combined config.
+		/// If neither exists, returns a safe default (SelectStatement only).
+		/// </summary>
+		/// <param name="exeDir">Directory containing the executable and config files.</param>
+		/// <returns>Immutable security configuration.</returns>
+		internal static SecurityConfig LoadSecurityFromFile( string exeDir )
 		{
 			var securityPath = Path.Combine( exeDir, SecurityFileName );
 			var configPath = Path.Combine( exeDir, ConfigFileName );
@@ -73,12 +134,11 @@ namespace SqlCli.Config
 				return config.Security;
 			}
 
-			// Neither exists — generate default combined config
-			var defaultConfig = CreateDefaultConfig();
-			var jsonc = JsoncGenerator.Generate( defaultConfig );
-			File.WriteAllText( configPath, jsonc );
-			Console.Error.WriteLine( $"Config file not found. Created default config at: {configPath}" );
-			return defaultConfig.Security;
+			// EnsureConfigExists should have created it, but defensive fallback
+			return new SecurityConfig
+			{
+				AllowedStatements = new List<string> { "SelectStatement" }
+			};
 		}
 
 		/// <summary>

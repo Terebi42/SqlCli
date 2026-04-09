@@ -98,17 +98,32 @@ namespace SqlCli.Tests.Config
 		}
 
 		/// <summary>
-		/// Verifies that a missing config file generates a default with SelectStatement.
+		/// Verifies that EnsureConfigExists generates a default config and LoadSecurity loads it.
 		/// </summary>
 		[TestMethod]
-		public void LoadSecurity_MissingFile_GeneratesDefaultWithSelectStatement()
+		public void LoadSecurity_MissingFile_EnsureConfigExistsGeneratesDefault()
 		{
+			ConfigLoader.EnsureConfigExists( _tempDir );
+			Assert.IsTrue( File.Exists( Path.Combine( _tempDir, "sqlcli.config.jsonc" ) ) );
+
 			var security = ConfigLoader.LoadSecurity( _tempDir );
 
 			Assert.AreEqual( "whitelist", security.FilterMode );
 			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
 			Assert.IsTrue( security.Audit.Enabled );
-			Assert.IsTrue( File.Exists( Path.Combine( _tempDir, "sqlcli.config.jsonc" ) ) );
+		}
+
+		/// <summary>
+		/// Verifies that LoadSecurity returns safe defaults when no config file exists
+		/// and EnsureConfigExists was not called.
+		/// </summary>
+		[TestMethod]
+		public void LoadSecurity_MissingFile_ReturnsSafeDefaults()
+		{
+			var security = ConfigLoader.LoadSecurity( _tempDir );
+
+			Assert.AreEqual( "whitelist", security.FilterMode );
+			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
 		}
 
 		/// <summary>

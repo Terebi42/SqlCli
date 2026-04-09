@@ -1,6 +1,7 @@
 using System;
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using SqlCli.Auth;
@@ -100,6 +101,17 @@ namespace SqlCli
 						Console.Error.WriteLine( ex.Message );
 						return (int)ExitCode.ConfigError;
 					}
+				}
+
+				// Ensure config file exists (auto-generate if needed) — runs in both modes
+				try
+				{
+					ConfigLoader.EnsureConfigExists( AppContext.BaseDirectory );
+				}
+				catch ( Exception ex ) when ( ex is IOException or UnauthorizedAccessException )
+				{
+					// Non-fatal — config generation is a convenience, not a requirement
+					Console.Error.WriteLine( $"WARNING: Could not auto-generate config: {ex.Message}" );
 				}
 
 				// Load security config — file only, never overridable
