@@ -43,7 +43,7 @@ namespace SqlCli.Tests.Config
 		/// Verifies that a valid combined config file loads security settings correctly.
 		/// </summary>
 		[TestMethod]
-		public void LoadSecurity_ValidCombinedConfig_DeserializesCorrectly()
+		public void LoadSecurityFromFile_ValidCombinedConfig_DeserializesCorrectly()
 		{
 			var json = """
 			{
@@ -59,7 +59,7 @@ namespace SqlCli.Tests.Config
 			""";
 			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
 
-			var security = ConfigLoader.LoadSecurity( _tempDir );
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
 
 			Assert.AreEqual( "whitelist", security.FilterMode );
 			CollectionAssert.AreEqual( new[] { "SelectStatement", "ExecuteStatement" }, security.AllowedStatements.ToArray() );
@@ -71,7 +71,7 @@ namespace SqlCli.Tests.Config
 		/// Verifies that a dedicated security file takes precedence over the combined config.
 		/// </summary>
 		[TestMethod]
-		public void LoadSecurity_SecurityFileExist_TakesPrecedence()
+		public void LoadSecurityFromFile_SecurityFileExist_TakesPrecedence()
 		{
 			var combinedJson = """
 			{
@@ -92,7 +92,7 @@ namespace SqlCli.Tests.Config
 			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), combinedJson );
 			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.security.jsonc" ), securityJson );
 
-			var security = ConfigLoader.LoadSecurity( _tempDir );
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
 
 			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
 		}
@@ -130,7 +130,7 @@ namespace SqlCli.Tests.Config
 		/// Verifies that empty allowedStatements in file loads as empty list (not class default).
 		/// </summary>
 		[TestMethod]
-		public void LoadSecurity_EmptyAllowedStatements_LoadsEmptyList()
+		public void LoadSecurityFromFile_EmptyAllowedStatements_LoadsEmptyList()
 		{
 			var json = """
 			{
@@ -142,7 +142,7 @@ namespace SqlCli.Tests.Config
 			""";
 			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
 
-			var security = ConfigLoader.LoadSecurity( _tempDir );
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
 
 			Assert.AreEqual( 0, security.AllowedStatements.Count );
 		}
@@ -151,7 +151,7 @@ namespace SqlCli.Tests.Config
 		/// Verifies that an unsupported filterMode throws a ConfigException.
 		/// </summary>
 		[TestMethod]
-		public void LoadSecurity_UnsupportedFilterMode_ThrowsConfigException()
+		public void LoadSecurityFromFile_UnsupportedFilterMode_ThrowsConfigException()
 		{
 			var json = """
 			{
@@ -163,7 +163,7 @@ namespace SqlCli.Tests.Config
 			""";
 			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
 
-			var ex = Assert.ThrowsExactly<ConfigException>( () => ConfigLoader.LoadSecurity( _tempDir ) );
+			var ex = Assert.ThrowsExactly<ConfigException>( () => ConfigLoader.LoadSecurityFromFile( _tempDir ) );
 			StringAssert.Contains( ex.Message, "Unsupported filterMode" );
 			StringAssert.Contains( ex.Message, "blacklist" );
 		}
@@ -172,12 +172,116 @@ namespace SqlCli.Tests.Config
 		/// Verifies that invalid JSON throws a ConfigException with a clear message.
 		/// </summary>
 		[TestMethod]
-		public void LoadSecurity_InvalidJson_ThrowsWithClearMessage()
+		public void LoadSecurityFromFile_InvalidJson_ThrowsWithClearMessage()
 		{
 			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), "not json{{{" );
 
-			var ex = Assert.ThrowsExactly<ConfigException>( () => ConfigLoader.LoadSecurity( _tempDir ) );
+			var ex = Assert.ThrowsExactly<ConfigException>( () => ConfigLoader.LoadSecurityFromFile( _tempDir ) );
 			StringAssert.Contains( ex.Message, "Invalid configuration" );
+		}
+
+		// --- CreateHardenedSecurity tests ---
+
+		/// <summary>
+		/// Verifies that CreateHardenedSecurity returns SelectStatement-only config with expected defaults.
+		/// </summary>
+		[TestMethod]
+		public void CreateHardenedSecurity_ReturnsSelectStatementOnly()
+		{
+			var security = ConfigLoader.CreateHardenedSecurity();
+
+			Assert.AreEqual( "whitelist", security.FilterMode );
+			Assert.AreEqual( 1, security.AllowedStatements.Count );
+			Assert.AreEqual( "SelectStatement", security.AllowedStatements[0] );
+			Assert.AreEqual( 0, security.AllowedSelectFeatures.Count );
+			Assert.IsTrue( security.Audit.Enabled );
+			Assert.AreEqual( "sqlcli-audit.log", security.Audit.Path );
+		}
+
+		// --- LoadSecurityFromFile tests ---
+
+		/// <summary>
+		/// Verifies that LoadSecurityFromFile returns safe defaults when no config files exist.
+		/// </summary>
+		[TestMethod]
+		public void LoadSecurityFromFile_NoFiles_ReturnsSafeDefaults()
+		{
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
+
+			Assert.AreEqual( "whitelist", security.FilterMode );
+			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
+		}
+
+		/// <summary>
+		/// Verifies that LoadSecurityFromFile loads from a dedicated security file.
+		/// </summary>
+		[TestMethod]
+		public void LoadSecurityFromFile_DedicatedSecurityFile_LoadsCorrectly()
+		{
+			var json = """
+			{
+			  "security": {
+			    "filterMode": "whitelist",
+			    "allowedStatements": ["SelectStatement"],
+			    "audit": { "enabled": false, "path": "dedicated.log" }
+			  }
+			}
+			""";
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.security.jsonc" ), json );
+
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
+
+			Assert.AreEqual( "whitelist", security.FilterMode );
+			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
+			Assert.IsFalse( security.Audit.Enabled );
+			Assert.AreEqual( "dedicated.log", security.Audit.Path );
+		}
+
+		// --- EnsureConfigExists tests ---
+
+		/// <summary>
+		/// Verifies that EnsureConfigExists creates a default config when no files exist.
+		/// </summary>
+		[TestMethod]
+		public void EnsureConfigExists_NoFiles_CreatesDefaultConfig()
+		{
+			ConfigLoader.EnsureConfigExists( _tempDir );
+
+			var configPath = Path.Combine( _tempDir, "sqlcli.config.jsonc" );
+			Assert.IsTrue( File.Exists( configPath ) );
+
+			var content = File.ReadAllText( configPath );
+			StringAssert.Contains( content, "SelectStatement" );
+		}
+
+		/// <summary>
+		/// Verifies that EnsureConfigExists does not overwrite an existing combined config.
+		/// </summary>
+		[TestMethod]
+		public void EnsureConfigExists_CombinedConfigExists_DoesNotOverwrite()
+		{
+			var configPath = Path.Combine( _tempDir, "sqlcli.config.jsonc" );
+			var original = """{ "security": { "allowedStatements": ["ExecuteStatement"] } }""";
+			File.WriteAllText( configPath, original );
+
+			ConfigLoader.EnsureConfigExists( _tempDir );
+
+			var content = File.ReadAllText( configPath );
+			Assert.AreEqual( original, content );
+		}
+
+		/// <summary>
+		/// Verifies that EnsureConfigExists does not create a combined config when a security file exists.
+		/// </summary>
+		[TestMethod]
+		public void EnsureConfigExists_SecurityFileExists_DoesNotCreateCombined()
+		{
+			var securityPath = Path.Combine( _tempDir, "sqlcli.security.jsonc" );
+			File.WriteAllText( securityPath, """{ "security": { "allowedStatements": ["SelectStatement"] } }""" );
+
+			ConfigLoader.EnsureConfigExists( _tempDir );
+
+			Assert.IsFalse( File.Exists( Path.Combine( _tempDir, "sqlcli.config.jsonc" ) ) );
 		}
 
 		// --- OperationalConfig loading tests ---
@@ -361,7 +465,7 @@ namespace SqlCli.Tests.Config
 			File.WriteAllText( Path.Combine( workDir, "sqlcli.app.jsonc" ), appJson );
 
 			// Security should come only from exe dir
-			var security = ConfigLoader.LoadSecurity( exeDir );
+			var security = ConfigLoader.LoadSecurityFromFile( exeDir );
 			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
 
 			// App should come from working dir
@@ -548,11 +652,11 @@ namespace SqlCli.Tests.Config
 		/// Verifies that the generated config round-trips through deserialization.
 		/// </summary>
 		[TestMethod]
-		public void GeneratedConfig_RoundTrips_ThroughLoadSecurity()
+		public void GeneratedConfig_RoundTrips_ThroughLoadSecurityFromFile()
 		{
 			ConfigLoader.GenerateConfig( _tempDir, split: false, force: false );
 
-			var security = ConfigLoader.LoadSecurity( _tempDir );
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
 
 			Assert.AreEqual( "whitelist", security.FilterMode );
 			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
@@ -567,7 +671,7 @@ namespace SqlCli.Tests.Config
 		{
 			ConfigLoader.GenerateConfig( _tempDir, split: false, force: false );
 
-			var security = ConfigLoader.LoadSecurity( _tempDir );
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
 			Assert.AreEqual( "whitelist", security.FilterMode );
 			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
 
@@ -729,7 +833,7 @@ namespace SqlCli.Tests.Config
 			""";
 			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
 
-			var security = ConfigLoader.LoadSecurity( _tempDir );
+			var security = ConfigLoader.LoadSecurityFromFile( _tempDir );
 			Assert.AreEqual( "whitelist", security.FilterMode );
 			CollectionAssert.AreEqual( new[] { "SelectStatement" }, security.AllowedStatements.ToArray() );
 			Assert.IsTrue( security.Audit.Enabled );
