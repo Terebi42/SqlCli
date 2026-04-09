@@ -1,0 +1,47 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-09-hardened-security-mode.md",
+  "tasks": [
+    {
+      "id": 8,
+      "subject": "Task 1: Create Directory.Build.props",
+      "status": "pending",
+      "description": "**Goal:** Add MSBuild plumbing that validates SecurityMode and propagates HARDENED_SECURITY define to all projects.\n\n**Files:**\n- Create: `Directory.Build.props`\n\n**Acceptance Criteria:**\n- [ ] Build with -p:SecurityMode=Standard succeeds\n- [ ] Build with -p:SecurityMode=Hardened succeeds\n- [ ] Build without SecurityMode fails with descriptive error\n- [ ] HARDENED_SECURITY is defined when SecurityMode=Hardened\n\n**Verify:** `dotnet build SqlCli.slnx -p:SecurityMode=Standard` succeeds; `dotnet build SqlCli.slnx` fails with error\n\n```json:metadata\n{\"files\": [\"Directory.Build.props\"], \"verifyCommand\": \"dotnet build SqlCli.slnx -p:SecurityMode=Standard\", \"acceptanceCriteria\": [\"Build with Standard succeeds\", \"Build with Hardened succeeds\", \"Build without SecurityMode fails with descriptive error\"], \"requiresUserVerification\": false}\n```"
+    },
+    {
+      "id": 9,
+      "subject": "Task 2: Refactor ConfigLoader and wire up Program.cs",
+      "status": "pending",
+      "blockedBy": [8],
+      "description": "**Goal:** Extract EnsureConfigExists, CreateHardenedSecurity, LoadSecurityFromFile; add #if dispatcher and IsHardened const; call EnsureConfigExists from Program.cs.\n\n**Files:**\n- Modify: `src/SqlCli/Config/ConfigLoader.cs`\n- Modify: `src/SqlCli/Program.cs`\n\n**Acceptance Criteria:**\n- [ ] EnsureConfigExists creates default config when no file exists\n- [ ] LoadSecurityFromFile loads from combined and split config\n- [ ] CreateHardenedSecurity returns SelectStatement-only config\n- [ ] LoadSecurity dispatches correctly via #if\n- [ ] IsHardened const reflects build mode\n- [ ] Program.cs calls EnsureConfigExists before Load* methods\n\n**Verify:** `dotnet build SqlCli.slnx -p:SecurityMode=Standard` succeeds\n\n```json:metadata\n{\"files\": [\"src/SqlCli/Config/ConfigLoader.cs\", \"src/SqlCli/Program.cs\"], \"verifyCommand\": \"dotnet build SqlCli.slnx -p:SecurityMode=Standard\", \"acceptanceCriteria\": [\"EnsureConfigExists works\", \"LoadSecurityFromFile works\", \"CreateHardenedSecurity returns correct values\", \"#if dispatcher works\", \"IsHardened const correct\"], \"requiresUserVerification\": false}\n```"
+    },
+    {
+      "id": 10,
+      "subject": "Task 3: Update tests for refactored ConfigLoader",
+      "status": "pending",
+      "blockedBy": [9],
+      "description": "**Goal:** Update existing tests and add new tests for CreateHardenedSecurity, LoadSecurityFromFile, and EnsureConfigExists.\n\n**Files:**\n- Modify: `tests/SqlCli.Tests/Config/ConfigLoaderTests.cs`\n\n**Acceptance Criteria:**\n- [ ] All existing test scenarios still covered\n- [ ] CreateHardenedSecurity returns expected values\n- [ ] LoadSecurityFromFile loads from combined and split configs\n- [ ] LoadSecurityFromFile returns safe defaults when no file found\n- [ ] EnsureConfigExists creates config when none exists\n- [ ] EnsureConfigExists is a no-op when config exists\n\n**Verify:** `dotnet test SqlCli.slnx -p:SecurityMode=Standard` all tests pass\n\n```json:metadata\n{\"files\": [\"tests/SqlCli.Tests/Config/ConfigLoaderTests.cs\"], \"verifyCommand\": \"dotnet test SqlCli.slnx -p:SecurityMode=Standard\", \"acceptanceCriteria\": [\"All tests pass\", \"New tests for EnsureConfigExists\", \"New tests for CreateHardenedSecurity\", \"New tests for LoadSecurityFromFile\"], \"requiresUserVerification\": false}\n```"
+    },
+    {
+      "id": 11,
+      "subject": "Task 4: Update config comment and AgentHelp",
+      "status": "pending",
+      "blockedBy": [9],
+      "description": "**Goal:** Update security section ConfigComment to explain both modes, and update AgentHelp to output current security mode.\n\n**Files:**\n- Modify: `src/SqlCli/Config/SqlCliConfig.cs`\n- Modify: `src/SqlCli/AgentHelp.cs`\n\n**Acceptance Criteria:**\n- [ ] Generated config includes Standard/Hardened mode explanation\n- [ ] --agent-help output includes current security mode\n- [ ] Agent help explains config file behavior per mode\n\n**Verify:** `dotnet test SqlCli.slnx -p:SecurityMode=Standard` all tests pass\n\n```json:metadata\n{\"files\": [\"src/SqlCli/Config/SqlCliConfig.cs\", \"src/SqlCli/AgentHelp.cs\"], \"verifyCommand\": \"dotnet test SqlCli.slnx -p:SecurityMode=Standard\", \"acceptanceCriteria\": [\"Config comment explains both modes\", \"AgentHelp shows security mode\", \"AgentHelp explains mode behavior\"], \"requiresUserVerification\": false}\n```"
+    },
+    {
+      "id": 12,
+      "subject": "Task 5: Update CI and README",
+      "status": "pending",
+      "blockedBy": [8],
+      "description": "**Goal:** Add -p:SecurityMode=Standard to CI build/test steps and document SecurityMode in README.\n\n**Files:**\n- Modify: `.github/workflows/build.yml`\n- Modify: `README.md`\n\n**Acceptance Criteria:**\n- [ ] CI build step passes SecurityMode=Standard\n- [ ] CI test step passes SecurityMode=Standard\n- [ ] README documents both security modes\n- [ ] README build instructions include SecurityMode\n\n**Verify:** `dotnet build SqlCli.slnx -p:SecurityMode=Standard` succeeds\n\n```json:metadata\n{\"files\": [\".github/workflows/build.yml\", \"README.md\"], \"verifyCommand\": \"dotnet build SqlCli.slnx -p:SecurityMode=Standard\", \"acceptanceCriteria\": [\"CI passes SecurityMode\", \"README documents SecurityMode\"], \"requiresUserVerification\": false}\n```"
+    },
+    {
+      "id": 13,
+      "subject": "Task 6: Final verification",
+      "status": "pending",
+      "blockedBy": [10, 11, 12],
+      "description": "**Goal:** Verify the complete feature works end-to-end in both modes.\n\n**Acceptance Criteria:**\n- [ ] dotnet build with SecurityMode=Standard succeeds\n- [ ] dotnet build with SecurityMode=Hardened succeeds\n- [ ] dotnet build without SecurityMode fails with descriptive error\n- [ ] dotnet test with SecurityMode=Standard passes\n- [ ] dotnet test with SecurityMode=Hardened passes\n\n**Verify:** All build/test commands above produce expected results\n\n```json:metadata\n{\"files\": [], \"verifyCommand\": \"dotnet test SqlCli.slnx -p:SecurityMode=Standard && dotnet test SqlCli.slnx -p:SecurityMode=Hardened\", \"acceptanceCriteria\": [\"Standard builds and tests pass\", \"Hardened builds and tests pass\", \"Missing SecurityMode fails\"], \"requiresUserVerification\": false}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-09T00:00:00Z"
+}
