@@ -11,16 +11,17 @@ namespace SqlCli.Auth
 		/// <summary>
 		/// Authenticates via SSPI with domain credentials (NTLM/Negotiate/Kerberos).
 		/// </summary>
-		/// <param name="Domain">Windows domain name.</param>
+		/// <param name="Domain">Domain name (e.g. Active Directory domain).</param>
 		/// <param name="User">Domain username.</param>
 		/// <param name="Password">Domain password.</param>
 		/// <param name="SspiPackage">SSPI package to use (NTLM, Negotiate, or Kerberos). Defaults to NTLM.</param>
 		public record DomainAuth( string Domain, string User, string Password, string SspiPackage = "NTLM" ) : AuthMode;
 
 		/// <summary>
-		/// Authenticates using the current Windows identity (integrated security).
+		/// Authenticates using the current process identity (integrated security).
+		/// On Windows, uses the current Windows identity. On Linux, uses the current Kerberos ticket.
 		/// </summary>
-		public record WindowsAuth : AuthMode;
+		public record IntegratedAuth : AuthMode;
 
 		/// <summary>
 		/// Authenticates using SQL Server credentials.
@@ -36,7 +37,7 @@ namespace SqlCli.Auth
 		/// </summary>
 		public static AuthMode Resolve(
 			string domain, string user, string password,
-			bool windowsAuth,
+			bool integratedAuth,
 			string sqlUser, string sqlPassword,
 			string sspiPackage = null )
 		{
@@ -44,7 +45,7 @@ namespace SqlCli.Auth
 				domain ?? Environment.GetEnvironmentVariable( "SQLCLI_DOMAIN" ),
 				user ?? Environment.GetEnvironmentVariable( "SQLCLI_USER" ),
 				password ?? Environment.GetEnvironmentVariable( "SQLCLI_PASSWORD" ),
-				windowsAuth, sqlUser, sqlPassword, sspiPackage );
+				integratedAuth, sqlUser, sqlPassword, sspiPackage );
 		}
 
 		/// <summary>
@@ -52,23 +53,23 @@ namespace SqlCli.Auth
 		/// </summary>
 		internal static AuthMode ResolveCore(
 			string domain, string user, string password,
-			bool windowsAuth,
+			bool integratedAuth,
 			string sqlUser, string sqlPassword,
 			string sspiPackage = null )
 		{
 			var hasDomainAuth = !string.IsNullOrEmpty( domain ) || !string.IsNullOrEmpty( user ) || !string.IsNullOrEmpty( password );
 			var hasSqlAuth = !string.IsNullOrEmpty( sqlUser ) || !string.IsNullOrEmpty( sqlPassword );
 
-			var modeCount = ( hasDomainAuth ? 1 : 0 ) + ( windowsAuth ? 1 : 0 ) + ( hasSqlAuth ? 1 : 0 );
+			var modeCount = ( hasDomainAuth ? 1 : 0 ) + ( integratedAuth ? 1 : 0 ) + ( hasSqlAuth ? 1 : 0 );
 
 			if ( modeCount == 0 )
 			{
-				throw new AuthException( "Exactly one auth mode required: --domain/--user/--password-stdin (or SQLCLI_PASSWORD env var), --windows-auth, or --sql-user/--sql-password." );
+				throw new AuthException( "Exactly one auth mode required: --domain/--user/--password-stdin (or SQLCLI_PASSWORD env var), --integrated-auth, or --sql-user/--sql-password." );
 			}
 
 			if ( modeCount > 1 )
 			{
-				throw new AuthException( "Only one auth mode allowed. Do not combine domain auth, --windows-auth, and --sql-user/--sql-password." );
+				throw new AuthException( "Only one auth mode allowed. Do not combine domain auth, --integrated-auth, and --sql-user/--sql-password." );
 			}
 
 			if ( hasDomainAuth )
@@ -87,9 +88,9 @@ namespace SqlCli.Auth
 				return new DomainAuth( domain, user, password, effectivePackage );
 			}
 
-			if ( windowsAuth )
+			if ( integratedAuth )
 			{
-				return new WindowsAuth();
+				return new IntegratedAuth();
 			}
 
 			if ( string.IsNullOrEmpty( sqlUser ) || string.IsNullOrEmpty( sqlPassword ) )

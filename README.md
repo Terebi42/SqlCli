@@ -6,7 +6,7 @@ A .NET 10 command-line tool for executing SQL Server queries with AST-based stat
 
 - Provide a safe way for AI agents to run investigative SQL queries against SQL Server
 - Prevent destructive operations through whitelist-based filtering using a real T-SQL parser
-- Support Windows domain authentication without requiring the parent process to run under `runas /netonly`
+- Support domain authentication (SSPI/Kerberos) without requiring the parent process to run under `runas /netonly`
 - Produce machine-parseable output (CSV, JSON) that agents can reason over
 - Be usable by humans too, with clear help and readable table output
 
@@ -26,7 +26,7 @@ Three mutually exclusive auth modes (exactly one required):
 
 | Mode | Flags | Description |
 |------|-------|-------------|
-| **Windows Auth** | `--windows-auth` | Uses current Windows identity |
+| **Integrated Auth** | `--integrated-auth` | Uses current process identity (Windows identity or Kerberos ticket) |
 | **Domain Auth** | `--domain` `--user` `--password-stdin` | SSPI with explicit credentials (netonly-equivalent via NegotiateAuthentication) |
 | **SQL Auth** | `--sql-user` `--sql-password` | SQL Server login |
 
@@ -72,8 +72,8 @@ Use `--error-codes` to print this reference.
 ## Usage
 
 ```bash
-# Windows auth -- query a table
-sqlcli --server myhost --database mydb --windows-auth --query "SELECT TOP 10 * FROM Orders"
+# Integrated auth -- query a table
+sqlcli --server myhost --database mydb --integrated-auth --query "SELECT TOP 10 * FROM Orders"
 
 # Domain auth via stdin (netonly-equivalent)
 echo secret | sqlcli --server myhost --database mydb --domain CORP --user jdoe --password-stdin --query "SELECT @@VERSION"
@@ -82,7 +82,7 @@ echo secret | sqlcli --server myhost --database mydb --domain CORP --user jdoe -
 sqlcli --server myhost --database mydb --sql-user sa --sql-password pass --query "SELECT @@VERSION" --format json
 
 # Execute a SQL file with table output
-sqlcli --server myhost --database mydb --windows-auth --file "report.sql" --format table
+sqlcli --server myhost --database mydb --integrated-auth --file "report.sql" --format table
 
 # Agent bootstrapping guide
 sqlcli --agent-help
@@ -213,7 +213,7 @@ Operational and app settings (timeouts, server, database, etc.) are still loaded
 
 ## Limitations
 
-- **Windows only** -- uses `NegotiateAuthentication` SSPI for domain authentication, targets `net10.0-windows`
+- **Cross-platform** -- uses `NegotiateAuthentication` for domain authentication (SSPI on Windows, GSSAPI/Kerberos on Linux)
 - **No interactive mode** -- single query per invocation (by design, for agent use)
 - **Row limit is per result set** -- a multi-statement batch could return `maxRows` per statement
 - **CSV doesn't support multiple result sets** -- use JSON or run queries separately

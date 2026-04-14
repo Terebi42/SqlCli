@@ -49,12 +49,12 @@ namespace SqlCli.Tests.Auth
 		}
 
 		/// <summary>
-		/// Verifies that WindowsAuth mode produces integrated security in the connection string.
+		/// Verifies that IntegratedAuth mode produces integrated security in the connection string.
 		/// </summary>
 		[TestMethod]
-		public void Build_WindowsAuth_UsesIntegratedSecurity()
+		public void Build_IntegratedAuth_UsesIntegratedSecurity()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			var ops = CreateOps();
 			var cs = ConnectionStringBuilder.Build( mode, app, ops );
@@ -81,7 +81,7 @@ namespace SqlCli.Tests.Auth
 		[TestMethod]
 		public void Build_DefaultTrustServerCertificate_IsFalse()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			var ops = CreateOps();
 			var cs = ConnectionStringBuilder.Build( mode, app, ops );
@@ -94,7 +94,7 @@ namespace SqlCli.Tests.Auth
 		[TestMethod]
 		public void Build_TrustServerCertificateTrue_IncludedInConnectionString()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			app.TrustServerCertificate = true;
 			var ops = CreateOps();
@@ -108,7 +108,7 @@ namespace SqlCli.Tests.Auth
 		[TestMethod]
 		public void Build_ConnectTimeout_IncludedInConnectionString()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			var ops = CreateOps();
 			ops.ConnectTimeout = 45;
@@ -122,7 +122,7 @@ namespace SqlCli.Tests.Auth
 		[TestMethod]
 		public void Build_DefaultConnectTimeout_Is15()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			var ops = CreateOps();
 			var cs = ConnectionStringBuilder.Build( mode, app, ops );
@@ -135,7 +135,7 @@ namespace SqlCli.Tests.Auth
 		[TestMethod]
 		public void Build_ApplicationName_IsSqlCli()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			var ops = CreateOps();
 			var cs = ConnectionStringBuilder.Build( mode, app, ops );
@@ -148,7 +148,7 @@ namespace SqlCli.Tests.Auth
 		[TestMethod]
 		public void Build_NoEncryptTrue_SetsEncryptFalse()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			app.NoEncrypt = true;
 			var ops = CreateOps();
@@ -162,7 +162,7 @@ namespace SqlCli.Tests.Auth
 		[TestMethod]
 		public void Build_NoEncryptFalse_SetsEncryptTrue()
 		{
-			var mode = new AuthMode.WindowsAuth();
+			var mode = new AuthMode.IntegratedAuth();
 			var app = CreateApp();
 			var ops = CreateOps();
 			var cs = ConnectionStringBuilder.Build( mode, app, ops );

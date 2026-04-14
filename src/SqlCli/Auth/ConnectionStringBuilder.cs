@@ -31,7 +31,7 @@ namespace SqlCli.Auth
 			switch ( mode )
 			{
 				case AuthMode.DomainAuth:
-				case AuthMode.WindowsAuth:
+				case AuthMode.IntegratedAuth:
 					builder.IntegratedSecurity = true;
 					break;
 				case AuthMode.SqlAuth sql:

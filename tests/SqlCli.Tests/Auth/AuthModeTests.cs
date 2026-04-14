@@ -46,13 +46,13 @@ namespace SqlCli.Tests.Auth
 		}
 
 		/// <summary>
-		/// Verifies that the windows-auth flag resolves to WindowsAuth mode.
+		/// Verifies that the integrated-auth flag resolves to IntegratedAuth mode.
 		/// </summary>
 		[TestMethod]
-		public void Resolve_WindowsAuth_ReturnsWindowsAuthMode()
+		public void Resolve_IntegratedAuth_ReturnsIntegratedAuthMode()
 		{
 			var mode = AuthMode.ResolveCore( null, null, null, true, null, null );
-			Assert.IsInstanceOfType<AuthMode.WindowsAuth>( mode );
+			Assert.IsInstanceOfType<AuthMode.IntegratedAuth>( mode );
 		}
 
 		/// <summary>

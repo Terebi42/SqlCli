@@ -54,9 +54,9 @@ namespace SqlCli
 
 				### Authentication (exactly one required)
 
-				**Windows Auth** (current identity):
+				**Integrated Auth** (current process identity — Windows identity or Kerberos ticket):
 				```
-				SqlCli --server SERVER --database DB --windows-auth --query "SELECT 1"
+				SqlCli --server SERVER --database DB --integrated-auth --query "SELECT 1"
 				```
 
 				**Domain Auth** (SSPI with explicit credentials, default NTLM):
@@ -95,7 +95,7 @@ namespace SqlCli
 
 				Auth mode is determined by which parameters are present (from CLI args or env vars):
 				- `--domain` + `--user` + `--password-stdin` (or env vars) → Domain Auth (SSPI)
-				- `--windows-auth` flag → Windows Auth (current identity)
+				- `--integrated-auth` flag → Integrated Auth (current process identity)
 				- `--sql-user` + `--sql-password` → SQL Auth
 
 				### Input
@@ -230,27 +230,27 @@ namespace SqlCli
 
 				Explore tables:
 				```
-				SqlCli --server S --database DB --windows-auth --query "SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES ORDER BY TABLE_SCHEMA, TABLE_NAME"
+				SqlCli --server S --database DB --integrated-auth --query "SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES ORDER BY TABLE_SCHEMA, TABLE_NAME"
 				```
 
 				Check columns:
 				```
-				SqlCli --server S --database DB --windows-auth --query "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Orders'"
+				SqlCli --server S --database DB --integrated-auth --query "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Orders'"
 				```
 
 				Sample data:
 				```
-				SqlCli --server S --database DB --windows-auth --query "SELECT TOP 10 * FROM Orders"
+				SqlCli --server S --database DB --integrated-auth --query "SELECT TOP 10 * FROM Orders"
 				```
 
 				Row count:
 				```
-				SqlCli --server S --database DB --windows-auth --query "SELECT COUNT(*) AS RowCount FROM Orders"
+				SqlCli --server S --database DB --integrated-auth --query "SELECT COUNT(*) AS RowCount FROM Orders"
 				```
 
 				Use CTE:
 				```
-				SqlCli --server S --database DB --windows-auth --query "WITH recent AS (SELECT * FROM Orders WHERE OrderDate > '2025-01-01') SELECT COUNT(*) FROM recent"
+				SqlCli --server S --database DB --integrated-auth --query "WITH recent AS (SELECT * FROM Orders WHERE OrderDate > '2025-01-01') SELECT COUNT(*) FROM recent"
 				```
 				""";
 		}

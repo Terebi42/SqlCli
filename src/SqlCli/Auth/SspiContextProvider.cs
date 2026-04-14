@@ -23,7 +23,7 @@ namespace SqlCli.Auth
 		/// <summary>
 		/// Initializes a new instance of the <see cref="DomainSspiContextProvider"/> class.
 		/// </summary>
-		/// <param name="domain">Windows domain name.</param>
+		/// <param name="domain">Domain name (e.g. Active Directory domain).</param>
 		/// <param name="user">Domain username.</param>
 		/// <param name="password">Domain password.</param>
 		/// <param name="package">SSPI package: NTLM, Negotiate, or Kerberos.</param>

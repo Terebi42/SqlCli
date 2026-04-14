@@ -24,10 +24,10 @@ namespace SqlCli
 		{
 			var serverOption = new Option<string>( "--server" ) { Description = "SQL Server hostname" };
 			var databaseOption = new Option<string>( "--database" ) { Description = "Database name" };
-			var domainOption = new Option<string>( "--domain" ) { Description = "Windows domain for impersonation (env: SQLCLI_DOMAIN)" };
+			var domainOption = new Option<string>( "--domain" ) { Description = "Domain for SSPI authentication (env: SQLCLI_DOMAIN)" };
 			var userOption = new Option<string>( "--user" ) { Description = "Username for impersonation (env: SQLCLI_USER)" };
 			var passwordStdinOption = new Option<bool>( "--password-stdin" ) { Description = "Read password from stdin (recommended)" };
-			var windowsAuthOption = new Option<bool>( "--windows-auth" ) { Description = "Use current Windows identity" };
+			var integratedAuthOption = new Option<bool>( "--integrated-auth" ) { Description = "Use current process identity (Windows identity or Kerberos ticket)" };
 			var sqlUserOption = new Option<string>( "--sql-user" ) { Description = "SQL Server login" };
 			var sqlPasswordOption = new Option<string>( "--sql-password" ) { Description = "SQL Server password [WARNING: visible in process list]" };
 			var queryOption = new Option<string>( "--query" ) { Description = "SQL query or batch to execute" };
@@ -45,11 +45,11 @@ namespace SqlCli
 			var generateConfigOption = new Option<bool>( "--generate-config" ) { Description = "Generate a default sqlcli.config.jsonc in the executable directory" };
 			var generateSplitConfigOption = new Option<bool>( "--generate-split-config" ) { Description = "Generate separate sqlcli.security.example.jsonc, sqlcli.config.example.jsonc, and sqlcli.app.example.jsonc files" };
 
-			var rootCommand = new RootCommand( "SQL Server CLI with configurable query filtering.\n\nExamples:\n  SqlCli --server myhost --database mydb --windows-auth --query \"SELECT TOP 10 * FROM Orders\"\n  echo secret | SqlCli --server myhost --database mydb --domain CORP --user jdoe --password-stdin --query \"SELECT 1\"\n  SqlCli --server myhost --database mydb --sql-user sa --sql-password pass --query \"SELECT @@VERSION\" --format json\n  SqlCli --server myhost --database mydb --windows-auth --file \"C:\\scripts\\report.sql\" --format table\n  SqlCli --server myhost --database mydb --windows-auth --query \"SELECT 1; SELECT 2\" --format json\n  SqlCli --error-codes\n  SqlCli --agent-help\n  SqlCli --generate-config" )
+			var rootCommand = new RootCommand( "SQL Server CLI with configurable query filtering.\n\nExamples:\n  SqlCli --server myhost --database mydb --integrated-auth --query \"SELECT TOP 10 * FROM Orders\"\n  echo secret | SqlCli --server myhost --database mydb --domain CORP --user jdoe --password-stdin --query \"SELECT 1\"\n  SqlCli --server myhost --database mydb --sql-user sa --sql-password pass --query \"SELECT @@VERSION\" --format json\n  SqlCli --server myhost --database mydb --integrated-auth --file \"C:\\scripts\\report.sql\" --format table\n  SqlCli --server myhost --database mydb --integrated-auth --query \"SELECT 1; SELECT 2\" --format json\n  SqlCli --error-codes\n  SqlCli --agent-help\n  SqlCli --generate-config" )
 			{
 				serverOption, databaseOption,
 				domainOption, userOption, passwordStdinOption,
-				windowsAuthOption,
+				integratedAuthOption,
 				sqlUserOption, sqlPasswordOption,
 				sspiPackageOption,
 				queryOption, fileOption,
@@ -182,7 +182,7 @@ namespace SqlCli
 						parseResult.GetValue( domainOption ),
 						parseResult.GetValue( userOption ),
 						passwordValue,
-						parseResult.GetValue( windowsAuthOption ),
+						parseResult.GetValue( integratedAuthOption ),
 						parseResult.GetValue( sqlUserOption ),
 						parseResult.GetValue( sqlPasswordOption ),
 						parseResult.GetValue( sspiPackageOption ) );
