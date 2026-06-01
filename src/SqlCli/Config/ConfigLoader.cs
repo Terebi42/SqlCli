@@ -411,6 +411,17 @@ namespace SqlCli.Config
 			{
 				target.NoEncrypt = ne.GetBoolean();
 			}
+
+			if ( section.TryGetProperty( "multiSubnetFailover", out var msf ) )
+			{
+				target.MultiSubnetFailover = msf.ValueKind switch
+				{
+					JsonValueKind.True => MultiSubnetFailoverMode.On,
+					JsonValueKind.False => MultiSubnetFailoverMode.Off,
+					JsonValueKind.String => MultiSubnetFailoverModeConverter.Parse( msf.GetString() ),
+					_ => throw new ConfigException( "Invalid multiSubnetFailover value; expected \"auto\", \"on\", \"off\", or a boolean." )
+				};
+			}
 		}
 
 		/// <summary>

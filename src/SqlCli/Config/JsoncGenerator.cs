@@ -247,6 +247,11 @@ namespace SqlCli.Config
 				return value.ToString();
 			}
 
+			if ( type == typeof( MultiSubnetFailoverMode ) )
+			{
+				return MultiSubnetFailoverModeConverter.ToJsonFragment( (MultiSubnetFailoverMode)value );
+			}
+
 			if ( type == typeof( AuditConfig ) )
 			{
 				var audit = (AuditConfig)value;

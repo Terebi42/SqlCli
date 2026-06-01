@@ -485,6 +485,133 @@ namespace SqlCli.Tests.Config
 			Assert.IsNull( app.Database );
 			Assert.IsFalse( app.TrustServerCertificate );
 			Assert.IsFalse( app.NoEncrypt );
+			Assert.AreEqual( MultiSubnetFailoverMode.Auto, app.MultiSubnetFailover );
+		}
+
+		// --- MultiSubnetFailover tri-state tests ---
+
+		/// <summary>
+		/// Verifies that the string "auto" parses to <see cref="MultiSubnetFailoverMode.Auto"/>.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_MultiSubnetFailoverAuto_ParsesAuto()
+		{
+			var json = """{ "app": { "server": "s", "multiSubnetFailover": "auto" } }""";
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
+
+			var app = ConfigLoader.LoadApp( _tempDir, _tempDir );
+
+			Assert.AreEqual( MultiSubnetFailoverMode.Auto, app.MultiSubnetFailover );
+		}
+
+		/// <summary>
+		/// Verifies that the boolean true parses to <see cref="MultiSubnetFailoverMode.On"/>.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_MultiSubnetFailoverTrue_ParsesOn()
+		{
+			var json = """{ "app": { "server": "s", "multiSubnetFailover": true } }""";
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
+
+			var app = ConfigLoader.LoadApp( _tempDir, _tempDir );
+
+			Assert.AreEqual( MultiSubnetFailoverMode.On, app.MultiSubnetFailover );
+		}
+
+		/// <summary>
+		/// Verifies that the boolean false parses to <see cref="MultiSubnetFailoverMode.Off"/>.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_MultiSubnetFailoverFalse_ParsesOff()
+		{
+			var json = """{ "app": { "server": "s", "multiSubnetFailover": false } }""";
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
+
+			var app = ConfigLoader.LoadApp( _tempDir, _tempDir );
+
+			Assert.AreEqual( MultiSubnetFailoverMode.Off, app.MultiSubnetFailover );
+		}
+
+		/// <summary>
+		/// Verifies that "on"/"off" string aliases parse to On/Off.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_MultiSubnetFailoverStringAliases_Parse()
+		{
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), """{ "app": { "multiSubnetFailover": "on" } }""" );
+			Assert.AreEqual( MultiSubnetFailoverMode.On, ConfigLoader.LoadApp( _tempDir, _tempDir ).MultiSubnetFailover );
+
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), """{ "app": { "multiSubnetFailover": "off" } }""" );
+			Assert.AreEqual( MultiSubnetFailoverMode.Off, ConfigLoader.LoadApp( _tempDir, _tempDir ).MultiSubnetFailover );
+		}
+
+		/// <summary>
+		/// Verifies that a missing key defaults to Auto.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_MissingMultiSubnetFailover_DefaultsToAuto()
+		{
+			var json = """{ "app": { "server": "s" } }""";
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
+
+			var app = ConfigLoader.LoadApp( _tempDir, _tempDir );
+
+			Assert.AreEqual( MultiSubnetFailoverMode.Auto, app.MultiSubnetFailover );
+		}
+
+		/// <summary>
+		/// Verifies that a working-dir config overrides the exe-dir multiSubnetFailover value.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_MultiSubnetFailover_WorkingDirOverridesExeDir()
+		{
+			var exeDir = Path.Combine( _tempDir, "exe" );
+			var workDir = Path.Combine( _tempDir, "work" );
+			Directory.CreateDirectory( exeDir );
+			Directory.CreateDirectory( workDir );
+
+			File.WriteAllText( Path.Combine( exeDir, "sqlcli.config.jsonc" ), """{ "app": { "server": "s", "multiSubnetFailover": "auto" } }""" );
+			File.WriteAllText( Path.Combine( workDir, "sqlcli.config.jsonc" ), """{ "app": { "multiSubnetFailover": true } }""" );
+
+			var app = ConfigLoader.LoadApp( exeDir, workDir );
+
+			Assert.AreEqual( MultiSubnetFailoverMode.On, app.MultiSubnetFailover );
+		}
+
+		/// <summary>
+		/// Verifies that a partial working-dir override does not reset multiSubnetFailover to its default.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_PartialWorkingDir_DoesNotResetMultiSubnetFailover()
+		{
+			var exeDir = Path.Combine( _tempDir, "exe" );
+			var workDir = Path.Combine( _tempDir, "work" );
+			Directory.CreateDirectory( exeDir );
+			Directory.CreateDirectory( workDir );
+
+			File.WriteAllText( Path.Combine( exeDir, "sqlcli.config.jsonc" ), """{ "app": { "server": "exe-server", "multiSubnetFailover": false } }""" );
+			File.WriteAllText( Path.Combine( workDir, "sqlcli.config.jsonc" ), """{ "app": { "server": "work-server" } }""" );
+
+			var app = ConfigLoader.LoadApp( exeDir, workDir );
+
+			Assert.AreEqual( "work-server", app.Server );
+			Assert.AreEqual( MultiSubnetFailoverMode.Off, app.MultiSubnetFailover, "Should remain Off from exe-dir, not reset to Auto." );
+		}
+
+		/// <summary>
+		/// Verifies that the generated config emits multiSubnetFailover as "auto" and round-trips to Auto.
+		/// </summary>
+		[TestMethod]
+		public void GeneratedConfig_MultiSubnetFailover_DefaultsToAutoAndRoundTrips()
+		{
+			ConfigLoader.GenerateConfig( _tempDir, split: false, force: false );
+
+			var content = File.ReadAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ) );
+			StringAssert.Contains( content, "multiSubnetFailover" );
+			StringAssert.Contains( content, "\"auto\"" );
+
+			var app = ConfigLoader.LoadApp( _tempDir, _tempDir );
+			Assert.AreEqual( MultiSubnetFailoverMode.Auto, app.MultiSubnetFailover );
 		}
 
 		// --- GenerateConfig tests ---

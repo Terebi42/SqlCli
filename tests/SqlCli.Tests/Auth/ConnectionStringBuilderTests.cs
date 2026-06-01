@@ -168,5 +168,48 @@ namespace SqlCli.Tests.Auth
 			var cs = ConnectionStringBuilder.Build( mode, app, ops );
 			StringAssert.Contains( cs, "Encrypt=True" );
 		}
+
+		/// <summary>
+		/// Verifies that MultiSubnetFailover mode On sets MultiSubnetFailover=True in the connection string.
+		/// </summary>
+		[TestMethod]
+		public void Build_MultiSubnetFailoverOn_SetsTrue()
+		{
+			var mode = new AuthMode.IntegratedAuth();
+			var app = CreateApp();
+			app.MultiSubnetFailover = MultiSubnetFailoverMode.On;
+			var ops = CreateOps();
+			var cs = ConnectionStringBuilder.Build( mode, app, ops );
+			StringAssert.Contains( cs, "Multi Subnet Failover=True" );
+		}
+
+		/// <summary>
+		/// Verifies that MultiSubnetFailover mode Off does not enable MultiSubnetFailover.
+		/// </summary>
+		[TestMethod]
+		public void Build_MultiSubnetFailoverOff_NotEnabled()
+		{
+			var mode = new AuthMode.IntegratedAuth();
+			var app = CreateApp();
+			app.MultiSubnetFailover = MultiSubnetFailoverMode.Off;
+			var ops = CreateOps();
+			var cs = ConnectionStringBuilder.Build( mode, app, ops );
+			Assert.IsFalse( cs.Contains( "Multi Subnet Failover=True", System.StringComparison.OrdinalIgnoreCase ) );
+		}
+
+		/// <summary>
+		/// Verifies the default (Auto, before resolution) does not enable MultiSubnetFailover in the
+		/// connection string — auto-resolution to On happens upstream in Program.cs, not in Build.
+		/// </summary>
+		[TestMethod]
+		public void Build_MultiSubnetFailoverAuto_NotEnabledInBuilder()
+		{
+			var mode = new AuthMode.IntegratedAuth();
+			var app = CreateApp();
+			Assert.AreEqual( MultiSubnetFailoverMode.Auto, app.MultiSubnetFailover, "Auto is the default mode." );
+			var ops = CreateOps();
+			var cs = ConnectionStringBuilder.Build( mode, app, ops );
+			Assert.IsFalse( cs.Contains( "Multi Subnet Failover=True", System.StringComparison.OrdinalIgnoreCase ) );
+		}
 	}
 }

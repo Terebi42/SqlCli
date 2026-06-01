@@ -39,6 +39,7 @@ namespace SqlCli
 			var maxFileSizeOption = new Option<long?>( "--max-file-size" ) { Description = "Maximum SQL file size in bytes (default: 51200 from config)" };
 			var trustCertOption = new Option<bool>( "--trust-server-certificate" ) { Description = "Trust the server certificate without validation" };
 			var noEncryptOption = new Option<bool>( "--no-encrypt" ) { Description = "Disable connection encryption (for legacy servers)" };
+			var multiSubnetFailoverOption = new Option<bool>( "--multi-subnet-failover" ) { Description = "Connect to all Availability Group listener IPs in parallel (recommended for AG listeners resolving to multiple IPs)" };
 			var sspiPackageOption = new Option<string>( "--sspi-package" ) { Description = "SSPI package for domain auth: NTLM, Negotiate, Kerberos (default: NTLM)" };
 			var errorCodesOption = new Option<bool>( "--error-codes" ) { Description = "Show exit code reference and exit" };
 			var agentHelpOption = new Option<bool>( "--agent-help" ) { Description = "Show agent bootstrapping guide (CLAUDE.md format)" };
@@ -55,7 +56,7 @@ namespace SqlCli
 				queryOption, fileOption,
 				formatOption, timeoutOption, connectTimeoutOption,
 				maxRowsOption, maxFileSizeOption,
-				trustCertOption, noEncryptOption,
+				trustCertOption, noEncryptOption, multiSubnetFailoverOption,
 				errorCodesOption, agentHelpOption,
 				generateConfigOption, generateSplitConfigOption
 			};
@@ -160,6 +161,18 @@ namespace SqlCli
 				ops.Format = parseResult.GetValue( formatOption ) ?? ops.Format;
 				app.TrustServerCertificate = parseResult.GetValue( trustCertOption ) || app.TrustServerCertificate;
 				app.NoEncrypt = parseResult.GetValue( noEncryptOption ) || app.NoEncrypt;
+				// Resolve MultiSubnetFailover mode: the --multi-subnet-failover flag forces it on;
+				// otherwise the config mode (auto/on/off) applies. In "auto" mode, resolve the server
+				// and enable it only when the name resolves to multiple IPs (an AG listener) — this
+				// avoids the dead-IP TCP stall without a flag, while leaving single-IP/local/IP-literal
+				// and non-TCP targets untouched.
+				var msfMode = parseResult.GetValue( multiSubnetFailoverOption ) ? MultiSubnetFailoverMode.On : app.MultiSubnetFailover;
+				if ( msfMode == MultiSubnetFailoverMode.Auto && MultiSubnetDetector.ResolvesToMultipleIps( app.Server ) )
+				{
+					msfMode = MultiSubnetFailoverMode.On;
+					Console.Error.WriteLine( $"Auto-enabled MultiSubnetFailover: '{app.Server}' resolves to multiple IP addresses." );
+				}
+				app.MultiSubnetFailover = msfMode;
 
 				// Password handling
 				var passwordValue = ReadPassword( parseResult, passwordStdinOption );

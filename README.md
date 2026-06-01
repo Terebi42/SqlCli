@@ -130,7 +130,8 @@ The file `sqlcli.config.jsonc` must be in the same directory as the executable. 
     "server": null,
     "database": null,
     "trustServerCertificate": false,
-    "noEncrypt": false
+    "noEncrypt": false,
+    "multiSubnetFailover": "auto"
   }
 }
 ```

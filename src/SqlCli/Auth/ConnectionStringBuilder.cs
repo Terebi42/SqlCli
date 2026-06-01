@@ -25,6 +25,7 @@ namespace SqlCli.Auth
 				TrustServerCertificate = app.TrustServerCertificate,
 				ConnectTimeout = ops.ConnectTimeout,
 				Encrypt = app.NoEncrypt ? SqlConnectionEncryptOption.Optional : SqlConnectionEncryptOption.Mandatory,
+				MultiSubnetFailover = app.MultiSubnetFailover == MultiSubnetFailoverMode.On,
 				ApplicationName = "SqlCli"
 			};
 

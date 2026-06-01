@@ -36,5 +36,12 @@ namespace SqlCli.Config
 		[ConfigComment( "Disable connection encryption (for legacy servers)." )]
 		[JsonPropertyName( "noEncrypt" )]
 		public bool NoEncrypt { get; set; }
+
+		/// <summary>
+		/// Gets or sets how MultiSubnetFailover is applied when connecting.
+		/// </summary>
+		[ConfigComment( "Connect to all Availability Group listener IPs in parallel (MultiSubnetFailover). \"auto\" (default) enables it automatically when the server resolves to multiple IPs (an AG listener); true forces it on; false disables it." )]
+		[JsonPropertyName( "multiSubnetFailover" )]
+		public MultiSubnetFailoverMode MultiSubnetFailover { get; set; } = MultiSubnetFailoverMode.Auto;
 	}
 }

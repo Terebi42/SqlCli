@@ -181,7 +181,8 @@ namespace SqlCli
 				    "server": null,
 				    "database": null,
 				    "trustServerCertificate": false,
-				    "noEncrypt": false
+				    "noEncrypt": false,
+				    "multiSubnetFailover": "auto"
 				  }
 				}
 				```
@@ -214,6 +215,7 @@ namespace SqlCli
 				### Additional CLI Options
 
 				- `--trust-server-certificate` — Trust the server certificate without validation (default: false)
+				- `--multi-subnet-failover` — Force MultiSubnetFailover on (connect to all listener IPs in parallel). By default (`multiSubnetFailover: "auto"` in config) this is enabled automatically when the server resolves to multiple IPs, so this flag is only needed to force it. Set `multiSubnetFailover: false` in config to disable.
 				- `--sspi-package PACKAGE` — SSPI package for domain auth: NTLM (default), Negotiate, or Kerberos
 				- `--max-rows N` — Override the maximum number of rows per result set (default from config: 100, minimum: 1)
 				- `--connect-timeout N` — Connection timeout in seconds (default from config: 15, range: 1-300)
