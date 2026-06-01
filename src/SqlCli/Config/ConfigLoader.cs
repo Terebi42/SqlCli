@@ -414,13 +414,31 @@ namespace SqlCli.Config
 
 			if ( section.TryGetProperty( "multiSubnetFailover", out var msf ) )
 			{
-				target.MultiSubnetFailover = msf.ValueKind switch
+				target.MultiSubnetFailover = ParseMultiSubnetFailover( msf );
+			}
+		}
+
+		/// <summary>
+		/// Parses a <c>multiSubnetFailover</c> JSON element (boolean or string) into a mode,
+		/// surfacing invalid values as a <see cref="ConfigException"/> for consistent handling.
+		/// </summary>
+		/// <param name="element">The JSON value of the multiSubnetFailover property.</param>
+		/// <returns>The parsed mode.</returns>
+		private static MultiSubnetFailoverMode ParseMultiSubnetFailover( JsonElement element )
+		{
+			try
+			{
+				return element.ValueKind switch
 				{
 					JsonValueKind.True => MultiSubnetFailoverMode.On,
 					JsonValueKind.False => MultiSubnetFailoverMode.Off,
-					JsonValueKind.String => MultiSubnetFailoverModeConverter.Parse( msf.GetString() ),
-					_ => throw new ConfigException( "Invalid multiSubnetFailover value; expected \"auto\", \"on\", \"off\", or a boolean." )
+					JsonValueKind.String => MultiSubnetFailoverModeConverter.Parse( element.GetString() ),
+					_ => throw new JsonException( "Expected \"auto\", true, or false." )
 				};
+			}
+			catch ( JsonException ex )
+			{
+				throw new ConfigException( $"Invalid multiSubnetFailover value. {ex.Message}", ex );
 			}
 		}
 

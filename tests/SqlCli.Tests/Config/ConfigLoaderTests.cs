@@ -599,6 +599,36 @@ namespace SqlCli.Tests.Config
 		}
 
 		/// <summary>
+		/// Verifies that an invalid multiSubnetFailover value in the base config throws a ConfigException.
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_InvalidMultiSubnetFailoverInBaseConfig_ThrowsConfigException()
+		{
+			var json = """{ "app": { "multiSubnetFailover": "garbage" } }""";
+			File.WriteAllText( Path.Combine( _tempDir, "sqlcli.config.jsonc" ), json );
+
+			Assert.ThrowsExactly<ConfigException>( () => ConfigLoader.LoadApp( _tempDir, _tempDir ) );
+		}
+
+		/// <summary>
+		/// Verifies that an invalid multiSubnetFailover value in a working-dir override
+		/// throws a ConfigException (not an unwrapped JsonException).
+		/// </summary>
+		[TestMethod]
+		public void LoadApp_InvalidMultiSubnetFailoverInWorkingDir_ThrowsConfigException()
+		{
+			var exeDir = Path.Combine( _tempDir, "exe" );
+			var workDir = Path.Combine( _tempDir, "work" );
+			Directory.CreateDirectory( exeDir );
+			Directory.CreateDirectory( workDir );
+
+			File.WriteAllText( Path.Combine( exeDir, "sqlcli.config.jsonc" ), """{ "app": { "server": "s" } }""" );
+			File.WriteAllText( Path.Combine( workDir, "sqlcli.config.jsonc" ), """{ "app": { "multiSubnetFailover": 5 } }""" );
+
+			Assert.ThrowsExactly<ConfigException>( () => ConfigLoader.LoadApp( exeDir, workDir ) );
+		}
+
+		/// <summary>
 		/// Verifies that the generated config emits multiSubnetFailover as "auto" and round-trips to Auto.
 		/// </summary>
 		[TestMethod]
